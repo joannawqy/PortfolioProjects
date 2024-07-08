@@ -1,0 +1,695 @@
+---
+title: "Codebook for ECON490 Final Paper"
+author: "Joanna Wang, 54536388"
+date: "2023-10-09"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Packages
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readxl)
+```
+
+# Preprocessing
+
+```{r}
+years <- 2015:2022
+data_list <- list()
+
+for(year in years) {
+  data_list[[paste0('w',year)]] <- read.csv(paste0("~/Desktop/ECON490/WHR/data/", year, ".csv"))
+}
+
+region <- read.csv('~/Desktop/ECON490/WHR/data/region.csv')
+income <- readxl::read_xlsx('~/Desktop/ECON490/WHR/data/income.xlsx')
+pop <- read.csv('~/Desktop/ECON490/WHR/data/population.csv')
+gdp <- read.csv('~/Desktop/ECON490/WHR/data/gdp.csv')
+gdp_22 <- readxl::read_xls('~/Desktop/ECON490/WHR/data/gdp_2022.xls')
+life <- read.csv('~/Desktop/ECON490/WHR/data/life.csv')
+life_22 <- read.csv('~/Desktop/ECON490/WHR/data/life_2022.csv')
+medage <- read.csv('~/Desktop/ECON490/WHR/data/median-age.csv')
+medage_22 <- readxl::read_xlsx('~/Desktop/ECON490/WHR/data/median-age_22.xlsx')
+list2env(data_list, envir = .GlobalEnv)
+```
+
+## ETL
+
+```{r}
+gdp <- gdp %>%
+  rename(country = Entity, year = Year, gdp = GDP.per.capita..PPP..constant.2017.international...) %>%
+  select(country, year, gdp) %>%
+  bind_rows(gdp_22) %>%
+  mutate(gdp = ifelse(gdp != 0, log(gdp), 0)) %>%
+  rename(gdp_ppp = gdp) 
+
+life_exp <- life %>%
+  rename(country = Entity, year = Year, life = Life.expectancy.at.birth..historical.) %>%
+  select(country, year, life) %>%
+  bind_rows(life_22)
+```
+
+```{r}
+whr_2015 <- w2015 %>%
+  select(
+    country = grep("country", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    rank = grep("rank", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("GDP.per.capita", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("family|social.support", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("health", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("freedom", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("corruption", names(w2015), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("generosity", names(w2015), ignore.case = TRUE, value = TRUE)[1]
+  ) %>%
+  mutate(year = 2015) %>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+
+whr_2016 <- w2016 %>%
+  select(
+    country = grep("country", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    rank = grep("rank", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("GDP.per.capita", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("family|social.support", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("health", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("freedom", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("corruption", names(w2016), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("generosity", names(w2016), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(year = 2016)%>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+
+whr_2017 <- w2017 %>%
+  select(
+    country = grep("country", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    rank = grep("rank", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("GDP.per.capita", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("family|social.support", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("health", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("freedom", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("corruption", names(w2017), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("generosity", names(w2017), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(year = 2017)%>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+
+whr_2018 <- w2018 %>%
+  select(
+    country = grep("country", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    rank = grep("rank", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("GDP.per.capita", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("family|social.support", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("health", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("freedom", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("corruption", names(w2018), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("generosity", names(w2018), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(corruption = as.numeric(corruption)) %>%
+  mutate(year = 2018)%>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+
+whr_2019 <- w2019 %>%
+  select(
+    country = grep("country", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    rank = grep("rank", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("GDP.per.capita", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("family|social.support", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("health", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("freedom", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("corruption", names(w2019), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("generosity", names(w2019), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(year = 2019)%>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+
+whr_2020 <- w2020 %>%
+  select(
+    country = grep("country", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("Explained.by..Log.GDP", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("Explained.by..Social", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("Explained.by..Healthy", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("Explained.by..Freedom", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("Explained.by..Perceptions", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("Explained.by..Generosity", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    gdp_ppp = grep("Logged.GDP.per.capita", names(w2020), ignore.case = TRUE, value = TRUE)[1],
+    life = grep("Healthy.life.expectancy", names(w2020), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(rank = rank(-score, ties.method = "min"))%>%
+  mutate(year = 2020)
+
+whr_2021 <- w2021 %>%
+  select(
+    country = grep("country", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("Explained.by..Log.GDP", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("Explained.by..Social", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("Explained.by..Healthy", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("Explained.by..Freedom", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("Explained.by..Perceptions", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("Explained.by..Generosity", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    gdp_ppp = grep("Logged.GDP.per.capita", names(w2021), ignore.case = TRUE, value = TRUE)[1],
+    life = grep("Healthy.life.expectancy", names(w2021), ignore.case = TRUE, value = TRUE)[1]
+  )%>%
+  mutate(rank = rank(-score, ties.method = "min"))%>%
+  mutate(year = 2021)
+
+whr_2022 <- w2022 %>%
+  select(
+    country = grep("country", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    score = grep("score", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    gdp = grep("Explained.by..GDP", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    social_support = grep("Explained.by..Social", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    health = grep("Explained.by..Healthy", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    freedom = grep("Explained.by..Freedom", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    corruption = grep("Explained.by..Perceptions", names(w2022), ignore.case = TRUE, value = TRUE)[1],
+    generosity = grep("Explained.by..Generosity", names(w2022), ignore.case = TRUE, value = TRUE)[1]
+  ) %>%
+  mutate_at(vars(score, gdp, social_support, health, freedom, corruption, generosity),
+            ~ as.numeric(gsub(",", ".", as.character(.)))) %>%
+  mutate(rank = rank(-score, ties.method = "min"))%>%
+  mutate(year = 2022)%>%
+  left_join(gdp, by = c("country", "year")) %>%
+  left_join(life_exp, by = c("country", "year"))
+```
+
+```{r}
+whr_df <- bind_rows(whr_2015, whr_2016, whr_2017, whr_2018, whr_2019, whr_2020, whr_2021, whr_2022)
+
+colnames(whr_df)
+```
+
+## Handling NAs
+
+```{r}
+na_count <- sapply(whr_df, function(y) sum(length(which(is.na(y)))))
+print(na_count)
+
+rows_with_na <- which(rowSums(is.na(whr_df)) > 0)
+print(rows_with_na)
+
+whr_df_clean <- whr_df[!rowSums(is.na(whr_df)),]
+```
+
+## Select countries
+
+```{r}
+country_counts <- whr_df_clean %>%
+                  group_by(country) %>%
+                  summarise(year_count = n())
+
+full_data_countries <- filter(country_counts, year_count == 8) %>%
+                       pull(country)
+whr <- filter(whr_df_clean, country %in% full_data_countries) %>%
+  mutate(gdp_ppp = ifelse(country == "Afghanistan" & year == 2022, 5.8090730, gdp_ppp))
+
+unique_countries <- unique(whr$country)
+```
+
+## Add IV Median Age
+
+```{r}
+medage_22 <- rename(medage_22, year = Year, country = region) %>%
+  mutate(median_age = as.numeric(median_age))
+medage <- select(medage, -Code) %>%
+  rename(., year = Year, country = Entity)
+
+medage_all <- bind_rows(medage, medage_22)
+
+
+whr <- whr %>%
+  left_join(medage_all, by=c("country","year"))
+
+whr <- whr %>%
+  arrange(country, year, is.na(median_age)) %>%
+  group_by(country, year) %>%
+  filter(!is.na(median_age) | row_number() == 1) %>%
+  ungroup()
+
+
+whr <- whr %>%
+  mutate(median_age = case_when(
+    country == "Bolivia" & year == 2022 & is.na(median_age) ~ 24.4,
+    country == "Iran" & year == 2022 & is.na(median_age) ~ 33.0,
+    country == "Moldova" & year == 2022 & is.na(median_age) ~ 34.7,
+    country == "Tanzania" & year == 2022 & is.na(median_age) ~ 17.0,
+    country == "United States" & year == 2022 & is.na(median_age) ~ 38.9,
+    country == "Vietnam" & year == 2022 & is.na(median_age) ~ 32.8,
+    TRUE ~ median_age
+  ))
+```
+## Add other predictors
+```{r}
+indicators <- read.csv("/Users/mac/Desktop/ECON490/WHR/data/indicators2.csv")
+
+whr <- whr %>%
+  left_join(.,indicators, by=c("country","year")) %>%
+  rename(unemp_rate = Unemployment.rate, population = Population.size.in.millions, pct_urban_population = Percent.urban.population)
+```
+
+
+# EDA
+
+```{r warning=FALSE}
+variables <- c("gdp", "social_support", "health", "freedom", "corruption", "generosity", "gdp_ppp", "life", "unemp_rate", "population", "pct_urban_population", "inflation")
+
+for (var in variables) {
+  
+  model <- lm(paste("score ~", var), data = whr)
+  coef_value <- coef(model)[2]
+  
+  print(
+    ggplot(whr, aes_string(x = var, y = "score")) + 
+      geom_point(aes_string(color = var)) + 
+      geom_smooth(method = "lm", se = FALSE, color = "red") + 
+      annotate("text", x = Inf, y = Inf, 
+               label = paste("Coefficient =", round(coef_value, 4)), 
+               hjust = 1, vjust = 1, size = 5, color = "red") +
+      labs(title = paste("Scatterplot of", var, "VS Score"),
+           x = var,
+           y = "Score") +
+      theme_minimal()
+  )
+}
+
+for (var in variables) {
+  p <- ggplot(whr, aes(x = as.factor(year), y = get(var))) + 
+       geom_boxplot() +
+       labs(title = paste("Boxplot of", var, "by Year"),
+            x = "Year", 
+            y = var) +
+       theme_minimal()
+  
+  print(p)
+}
+
+```
+
+# Event Study Framework
+
+## Visualization
+
+```{r}
+data_2015 <- whr %>% filter(year == 2015)
+data_2019 <- whr %>% filter(year == 2019)
+
+# Compute the change in score
+change_in_happiness <- data_2019 %>%
+  select(country, score) %>%
+  left_join(data_2015 %>% select(country, score_2015 = score), by = "country") %>%
+  mutate(score_change = score - score_2015)
+
+# Select the top and bottom countries based on the score change
+top_bottom_n <- 10
+top_countries <- head(change_in_happiness %>% arrange(desc(score_change)), n = top_bottom_n)
+bottom_countries <- head(change_in_happiness %>% arrange(score_change), n = top_bottom_n)
+plot_data <- rbind(top_countries, bottom_countries)
+
+# Order the countries factor to match the order in the plot data
+plot_data$country <- factor(plot_data$country, levels = rev(plot_data$country))
+
+# Create a horizontal bar chart
+p <- ggplot(plot_data, aes(x = country, y = score_change)) +
+  geom_bar(stat = "identity", aes(fill = score_change > 0), position = position_dodge(width = 0.9)) +
+  coord_flip() +  # Flip the axes to get a horizontal bar chart
+  xlab('Country') +
+  ylab('Change in Happiness Score') +
+  ggtitle('Changes in Happiness from 2015 to 2019') +
+  theme_minimal() +
+  scale_fill_manual(values = c('skyblue', 'orange')) +
+  geom_text(aes(label = sprintf('%.2f', score_change)), hjust = -0.1)
+
+# Print the plot
+print(p)
+```
+
+```{r}
+data_2022 <- whr %>% filter(year == 2022)
+
+# Compute the change in score
+change_in_happiness <- data_2022 %>%
+  select(country, score) %>%
+  left_join(data_2019 %>% select(country, score_2019 = score), by = "country") %>%
+  mutate(score_change = score - score_2019)
+
+# Select the top and bottom countries based on the score change
+top_bottom_n <- 10
+top_countries <- head(change_in_happiness %>% arrange(desc(score_change)), n = top_bottom_n)
+bottom_countries <- head(change_in_happiness %>% arrange(score_change), n = top_bottom_n)
+plot_data <- rbind(top_countries, bottom_countries)
+
+# Order the countries factor to match the order in the plot data
+plot_data$country <- factor(plot_data$country, levels = rev(plot_data$country))
+
+# Create a horizontal bar chart
+p <- ggplot(plot_data, aes(x = country, y = score_change)) +
+  geom_bar(stat = "identity", aes(fill = score_change > 0), position = position_dodge(width = 0.9)) +
+  coord_flip() +  # Flip the axes to get a horizontal bar chart
+  xlab('Country') +
+  ylab('Change in Happiness Score') +
+  ggtitle('Changes in Happiness from 2019 to 2022') +
+  theme_minimal() +
+  scale_fill_manual(values = c('skyblue', 'orange')) +
+  geom_text(aes(label = sprintf('%.2f', score_change)), hjust = -0.1)
+
+# Print the plot
+print(p)
+```
+
+```{r}
+# Compute the change in score
+change_in_happiness <- data_2022 %>%
+  select(country, score) %>%
+  left_join(data_2015 %>% select(country, score_2015 = score), by = "country") %>%
+  mutate(score_change = score - score_2015)
+
+# Select the top and bottom countries based on the score change
+top_bottom_n <- 10
+top_countries <- head(change_in_happiness %>% arrange(desc(score_change)), n = top_bottom_n)
+bottom_countries <- head(change_in_happiness %>% arrange(score_change), n = top_bottom_n)
+plot_data <- rbind(top_countries, bottom_countries)
+
+# Order the countries factor to match the order in the plot data
+plot_data$country <- factor(plot_data$country, levels = rev(plot_data$country))
+
+# Create a horizontal bar chart
+p <- ggplot(plot_data, aes(x = country, y = score_change)) +
+  geom_bar(stat = "identity", aes(fill = score_change > 0), position = position_dodge(width = 0.9)) +
+  coord_flip() +  # Flip the axes to get a horizontal bar chart
+  xlab('Country') +
+  ylab('Change in Happiness Score') +
+  ggtitle('Changes in Happiness from 2015 to 2022') +
+  theme_minimal() +
+  scale_fill_manual(values = c('skyblue', 'orange')) +
+  geom_text(aes(label = sprintf('%.2f', score_change)), hjust = -0.1)
+
+# Print the plot
+print(p)
+
+```
+
+## Global Aggregation (Paired t test)
+### Estimate the "Normal" Behavior
+
+```{r}
+normal_behavior <- whr %>%
+                   filter(year %in% 2015:2019) %>%
+                   group_by(country) %>%
+                   summarise(avg_score_pre_covid = mean(score, na.rm=TRUE))
+```
+
+### Compute Abnormal Returns
+
+```{r}
+abnormal_returns <- whr %>%
+                    filter(year %in% 2020:2022) %>%
+                    left_join(normal_behavior, by="country") %>%
+                    mutate(abnormal_score = score - avg_score_pre_covid) %>%
+                    select(country, year, score, avg_score_pre_covid, abnormal_score)
+```
+
+### Test for Significance
+
+```{r}
+library(stats)
+t.test(abnormal_returns$score, abnormal_returns$avg_score_pre_covid, paired=TRUE)
+```
+
+
+## Income Group Specific
+
+```{r}
+income <- income %>%
+  rename(country = Economy, income_group = `Income group`) %>%
+  select(country, income_group)
+
+whr <- whr %>%
+  left_join(income, by="country")
+
+na_income_countries <- whr %>%
+  filter(is.na(income_group)) %>%
+  distinct(country) %>%
+  pull(country)
+
+whr <- whr %>%
+  mutate(income_group = case_when(
+    country %in% c("Slovakia", "South Korea") ~ "High income",
+    country %in% c("Venezuela", "Russia", "Turkey", "Iran") ~ "Upper middle income",
+    country %in% c("Kyrgyzstan", "Egypt", "Ivory Coast") ~ "Lower middle income",
+    TRUE ~ income_group
+  ))
+```
+
+```{r}
+normal_behavior_income <- whr %>%
+                   filter(year %in% 2015:2019) %>%
+                   group_by(income_group) %>%
+                   summarise(avg_score_pre_covid = mean(score, na.rm=TRUE))
+
+abnormal_returns_income <- whr %>%
+                    filter(year %in% 2020:2022) %>%
+                    left_join(normal_behavior_income, by="income_group") %>%
+                    mutate(abnormal_score = score - avg_score_pre_covid) %>%
+                    select(country, year, income_group, score, avg_score_pre_covid, abnormal_score)
+
+income_levels <- unique(abnormal_returns_income$income_group)
+
+for (group in income_levels) {
+  data_group <- subset(abnormal_returns_income, income_group == group)
+  
+  if (group == "Low income") {
+    # Wilcoxon signed-rank test for 'Low income' group
+    test_result <- wilcox.test(data_group$score, data_group$avg_score_pre_covid, paired=TRUE)
+    cat(paste("Wilcoxon signed-rank test for income group:", group, "\n"))
+  } else {
+    # Paired t-test for other income groups
+    test_result <- t.test(data_group$score, data_group$avg_score_pre_covid, paired=TRUE)
+    cat(paste("T-test for income group:", group, "\n"))
+  }
+  
+  print(test_result)
+}
+
+
+# Additional code to format output for LaTeX
+for (group in income_levels) {
+  data_group <- subset(abnormal_returns_income, income_group == group)
+  
+  if (group == "Low income") {
+    # Wilcoxon signed-rank test for 'Low income' group
+    test_result <- wilcox.test(data_group$score, data_group$avg_score_pre_covid, paired=TRUE)
+    print(paste0("Wilcoxon signed-rank test for income group: ", group, "\\par"))
+  } else {
+    # Paired t-test for other income groups
+    test_result <- t.test(data_group$score, data_group$avg_score_pre_covid, paired=TRUE)
+    print(paste0("T-test for income group: ", group, "\\par"))
+  }
+
+  # Format the output for LaTeX
+  cat("\\begin{table}[H]\n\\centering\n\\begin{tabular}{|l|c|}\n\\hline\n")
+  cat(paste0("Test & ", ifelse(group == "Low income", "Wilcoxon signed-rank test", "Paired t-test"), "\\\\ \\hline\n"))
+  cat(paste0("Group & ", group, "\\\\ \\hline\n"))
+  cat(paste0("Statistic & ", test_result$statistic, "\\\\ \\hline\n"))
+  cat(paste0("P-value & ", format.pval(test_result$p.value, digits = 2), "\\\\ \\hline\n"))
+  cat(paste0("Confidence Interval & [", signif(test_result$conf.int[1], digits = 2), ", ", signif(test_result$conf.int[2], digits = 2), "]\\\\ \\hline\n"))
+  cat("\\end{tabular}\n\\caption{Test result for ", group, "}\n\\end{table}\n\n")
+}
+
+
+```
+# Proportional Contribution Analysis
+## Visual Analysis
+
+```{r}
+whr <- whr %>%
+  mutate(
+    prop_gdp = gdp / score,
+    prop_health = health / score,
+    prop_social_support = social_support / score,
+    prop_freedom = freedom / score,
+    prop_corruption = corruption / score,
+    prop_generosity = generosity / score
+  )
+```
+
+
+```{r}
+whr_long <- whr %>%
+  select(year, prop_gdp, prop_health, prop_social_support, prop_freedom, prop_corruption, prop_generosity) %>%
+  pivot_longer(-year, names_to="component", values_to="proportion")
+
+whr_long %>%
+  group_by(year, component) %>%
+  summarise(mean_proportion = mean(proportion, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = mean_proportion, color = component)) +
+  geom_line(size = 1) +
+  theme_minimal() +
+  labs(title = "Mean Proportional Contribution of Happiness Components Over Years",
+       y = "Mean Proportional Contribution",
+       x = "Year",
+       color = "Component") +
+  theme(legend.position = "bottom")
+```
+
+## Statistical Analysis
+```{r warning=FALSE}
+pre_years = c(2015, 2016, 2017, 2018, 2019)
+post_years = c(2020, 2021, 2022)
+components = c("prop_gdp", "prop_health", "prop_social_support", "prop_freedom", "prop_corruption", "prop_generosity")
+
+# Summarize by average proportions for each period and rename columns accordingly
+pre_summary <- whr %>%
+  filter(year %in% pre_years) %>%
+  group_by(country) %>%
+  summarise(across(components, mean, na.rm=TRUE)) %>%
+  rename_at(vars(components), ~ paste0("pre_", .))
+
+post_summary <- whr %>%
+  filter(year %in% post_years) %>%
+  group_by(country) %>%
+  summarise(across(components, mean, na.rm=TRUE)) %>%
+  rename_at(vars(components), ~ paste0("post_", .))
+
+# Merge the summaries
+combined_data <- inner_join(pre_summary, post_summary, by="country")
+
+# Initialize a results list
+results <- list()
+
+# Conduct paired t-tests for each component
+for (comp in components) {
+  pre_colname <- paste0("pre_", comp)
+  post_colname <- paste0("post_", comp)
+  
+  test_result <- t.test(combined_data[[pre_colname]], combined_data[[post_colname]], paired=TRUE)
+  results[[comp]] <- test_result
+}
+
+# View the results
+results
+```
+
+# Regression Analysis
+
+```{r}
+whr <- whr %>%
+  mutate(covid_ind = ifelse(year <= 2019, 0, 1)) %>%
+  mutate(income_group = as.factor(income_group))
+
+whr$centered_gdp_ppp <- whr$gdp_ppp - mean(whr$gdp_ppp, na.rm = TRUE)
+whr$centered_life <- whr$life - mean(whr$life, na.rm = TRUE)
+whr$centered_unemprate <- whr$unemp_rate - mean(whr$unemp_rate, na.rm = TRUE)
+whr$centered_inflation <- whr$inflation - mean(whr$inflation, na.rm = TRUE)
+whr$centered_population <- whr$population - mean(whr$population, na.rm = TRUE)
+whr$centered_pcturbanpopulation <- whr$pct_urban_population - mean(whr$pct_urban_population, na.rm = TRUE)
+```
+
+
+## Year Fixed Effect 
+
+```{r}
+library(plm)
+```
+
+```{r}
+fe_year <- plm(score ~ centered_gdp_ppp + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation, 
+                data = whr, 
+                index = "year", 
+                model = "within")
+summary(fe_year)
+```
+
+## Year Fixed Effect + interaction
+```{r}
+fe_year_covid <- plm(score ~ centered_gdp_ppp + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + centered_gdp_ppp:covid_ind + centered_life:covid_ind + centered_unemprate:covid_ind + centered_pcturbanpopulation:covid_ind + centered_population:covid_ind + centered_inflation:covid_ind, 
+                data = whr, 
+                index = "year", 
+                model = "within")
+
+summary(fe_year_covid)
+
+```
+
+## Income Fixed Effect
+
+```{r}
+fe_income <- plm(score ~ centered_gdp_ppp + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + covid_ind, 
+                data = whr, 
+                index = "income_group", 
+                model = "within")
+
+summary(fe_income)
+```
+
+## Income Fixed Effect + interaction
+```{r}
+fe_income_covid <- plm(score ~ centered_gdp_ppp + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + covid_ind + centered_gdp_ppp:covid_ind + centered_life:covid_ind + centered_unemprate:covid_ind + centered_pcturbanpopulation:covid_ind + centered_population:covid_ind + centered_inflation:covid_ind, 
+                data = whr, 
+                index = "income_group", 
+                model = "within")
+
+summary(fe_income_covid)
+
+```
+
+## 2SLS
+```{r}
+library(AER)
+whr$centered_medianage <- whr$median_age - mean(whr$median_age, na.rm = TRUE)
+```
+
+
+```{r}
+first_stage <- lm(centered_gdp_ppp ~ centered_medianage + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + covid_ind, data = whr)
+
+summary(first_stage)
+```
+
+```{r}
+iv_model <- ivreg(score ~ centered_gdp_ppp + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + covid_ind | centered_medianage + centered_life + centered_unemprate + centered_population + centered_pcturbanpopulation + centered_inflation + covid_ind, data = whr)
+
+summary(iv_model)
+
+```
+
+### Test
+
+```{r}
+library(lmtest)
+
+coef_diff <- coef(iv_model) - coef(ols_centered)
+diff_var <- vcov(iv_model) - vcov(ols_centered)
+
+valid_coef <- names(coef_diff) %in% names(coef(iv_model))
+coef_diff <- coef_diff[valid_coef]
+diff_var <- diff_var[valid_coef, valid_coef]
+
+hausman_stat <- t(coef_diff) %*% solve(diff_var) %*% coef_diff
+hausman_stat <- as.numeric(hausman_stat)
+
+df <- length(coef_diff)  
+p_value <- pchisq(hausman_stat, df, lower.tail = FALSE)
+
+list(statistic = hausman_stat, p_value = p_value)
+```
+
+
